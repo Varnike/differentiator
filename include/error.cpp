@@ -66,7 +66,16 @@ const char *errmsg(int errt)
 		"Tree only one child error!",
 		"Tree same left & right child error!",
 		"Tree NULL node pointer error!",	
-		"Tree bad root node for error!"
+		"Tree bad root node for ctor error!",
+		"Akinator syntax error!",
+		"Akinator bad init string!",
+		"Akinator NULL argument",
+		"Akinator buffer overflow"
+	};
+
+	const char *diff_messages[] = {
+		"Differentiator unknown node type!",
+		"Differentiator syntax error!"
 	};
 
 	switch (errt/100) {
@@ -81,6 +90,9 @@ const char *errmsg(int errt)
 		break;
 	case 3:
 		return tree_messages[errt - 300];
+	case 4:
+		return diff_messages[errt - 400];
+		break;
 	default:
 		return messages[UNKNOWN_ERR];
 		break;

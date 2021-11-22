@@ -37,11 +37,8 @@
 //#define TREE_CHECK_DUMP
 
 /*
- * akinator debug mode
+ * print node paret in dump
  */
-#define AKINATOR_DEBUG
-
-
-
+//#define PARENT_PRINT
 
 #endif

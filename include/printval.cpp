@@ -6,7 +6,7 @@ void printStackVal(double value, FILE *file)
 }
 void printStackVal(char value, FILE *file)
 {
-	fprintf(file,"%d\n", (int)value);
+	fprintf(file,"%c", value);
 }
 void printStackVal(int value, FILE *file)
 {

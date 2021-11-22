@@ -94,7 +94,7 @@ enum list_errs {
 
 const int TREE_ERRS = 7;
 /*
- * TREE errors
+ * TREE n AKINATOR errors
  */
 
 enum tree_errs {
@@ -109,6 +109,16 @@ enum tree_errs {
 	AKINATOR_BAD_INIT_STR = 308,
 	AKINATOR_NULL_ARG     = 309,
 	AKINATOR_BUFF_OVERFLOW= 310
+};
+
+const int DIFF_ERRS = 1;
+/*
+ * DIFFERENTIATOR errors
+ */
+
+enum diff_errs {
+	DIFF_UNKNOWN_TYPE = 400,
+	DIFF_SYNTAX_ERR   = 401
 };
 /*
  * Returns a pointer to the textual description of the code errtype.

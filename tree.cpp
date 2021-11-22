@@ -1,28 +1,27 @@
 #include "tree.h"
 
-static void set_node(TNODE *node, tval_t val, TNODE *left = NULL, TNODE *right = NULL);
+static void set_node(TNODE *node, tval_t val, TNODE *parent = NULL, TNODE *left = NULL, TNODE *right = NULL);
 static void visit_check(TNODE *node, int flagval = 0);
 
-static int TreeTraversePre(TNODE *root);
+static int TreeTraverseIn(TNODE *root);
 static int TreeTraverseDelete(TNODE *root);
+static int tree_copy(TNODE *src, TNODE **dst, TNODE *parent);
 
 int _tree_check(TNODE *node);
 
 FILE *file = NULL;
 
-int TreeCtor(TNODE **root, tval_t val)
+int TreeCtor(TNODE **root, tval_t val, TNODE *parent)
 {
 	CHECK_(*root != NULL, TREE_BAD_CTOR_ROOT);
-
-	//assert(root == NULL);
-
+	
 	*root = (TNODE*)calloc(1,sizeof(TNODE));
 
 	if (*root == NULL)
 		return ERRNUM = CALLOC_ERR;
 
-	
-	set_node(*root, val);
+		
+	set_node(*root, val, parent);
 	
 	return 0;
 }
@@ -63,6 +62,15 @@ err_free_buff:
 	return ERRNUM;
 }
 
+int TreeCopy(TNODE *src, TNODE **dst, TNODE *parent)
+{
+	TREE_CHECK(src, ERRNUM);
+	
+	tree_copy(src, dst, parent);
+
+	return ERRNUM;
+}
+
 int TreeDtor(TNODE *node) 
 {
 	TREE_CHECK(node, ERRNUM);
@@ -72,7 +80,32 @@ int TreeDtor(TNODE *node)
 
 	return 0;
 }
-//TODO ERRS
+
+void TreeDump(TNODE *root)
+{
+	TREE_CHECK(root, ERRNUM);//TODO
+
+	file = fopen("dump/dump.dot", "w");
+	assert(file);
+
+	if (file == NULL) {
+		ERRNUM = FOPEN_ERR;
+		return;
+	}
+
+	fprintf(file, "digraph dump_graph {\n\trankdir=TV; \n");
+
+	TreeTraverseIn(root);
+	ERRNUM_CHECK(;);
+
+	fprintf(file, "}\n");
+		
+	fclose(file);
+
+	system("dot -Tsvg dump/dump.dot -o dump/dump.svg");
+}
+
+
 static int TreeTraverseDelete(TNODE *node)
 {
 	ERRNUM_CHECK(ERRNUM);
@@ -91,7 +124,7 @@ static int TreeTraverseDelete(TNODE *node)
 	return 0;
 }
 
-static int TreeTraversePre(TNODE *node)
+static int TreeTraverseIn(TNODE *node)
 {
 	ERRNUM_CHECK(ERRNUM);
 
@@ -99,54 +132,31 @@ static int TreeTraversePre(TNODE *node)
 		return ERRNUM = TREE_NULL_NODE;
 	
 	if (node->left)
-		TreeTraversePre(node->left);
+		TreeTraverseIn(node->left);
 	
 	TreeDotDump(node);
-		
+	VisitPrint(node);
+
 	if (node->right)
-		TreeTraversePre(node->right);
+		TreeTraverseIn(node->right);
 	return 0;
 }
 
-void TreeDump(TNODE *root)
-{
-	TREE_CHECK(root, ERRNUM);
-
-	file = fopen("dump/dump.dot", "w");
-	assert(file);
-
-	if (file == NULL) {
-		ERRNUM = FOPEN_ERR;
-		return;
-	}
-
-	fprintf(file, "digraph dump_graph {\n\trankdir=TV; \n");
-
-	TreeTraversePre(root);
-	ERRNUM_CHECK(;);
-
-	fprintf(file, "}\n");
-		
-	fclose(file);
-
-	system("dot -Tsvg dump/dump.dot -o dump/dump.svg");
-}
-
-static void set_node(TNODE *node, tval_t val, TNODE *left, TNODE *right)
+static void set_node(TNODE *node, tval_t val, TNODE *parent, TNODE *left, TNODE *right)
 {
 	if (node == NULL)
 		return;
 
-	node->data = val;
-	node->left = left;
-	node->right = right;
+	node->data   = val;
+	node->parent = parent;
+	node->left   = left;
+	node->right  = right;
 }
 
 int _tree_check(TNODE *node)
 {
-	CHECK_(node == NULL,  						TREE_NULL_NODE);
-	CHECK_(node->data.strptr == NULL, 				TREE_NULL_DATA);
-	CHECK_((node->left == node->right) && (node->left != NULL),  	TREE_SAME_CHILD);
+	CHECK_(node == NULL,  							TREE_NULL_NODE);	
+	CHECK_((node->left == node->right) && (node->left != NULL),  		TREE_SAME_CHILD);
 	
 	return NO_ERR;
 }
@@ -206,9 +216,15 @@ void VisitPrint(TNODE *node, FILE *fout)
 		return;
 	if (!node)
 		return;
+	
+	fprintf(fout, "node : [  %p  ], datatype : [  %d  ], ", node, node->data.data_type);
+	if (node->data.data_type == CONST)
+		fprintf(fout, "data : [  %lg  ], ", node->data.value.num);
+	else 
+		fprintf(fout, "data : [  %c  ], ", node->data.value.str);
 
-	fprintf(fout, "node : [  %p  ], data : [%s], len : [  %d  ], left : [  %p  ], right : [  %p  ]\n", 
-		node, node->data.strptr, node->data.len, node->left, node->right);
+	fprintf(fout, "\tleft : [  %p  ],\tright : [  %p  ],\tparent : [  %p  ]\n", 
+			node->left, node->right, node->parent);
 }
 
 void TreeDotDump(TNODE *node)
@@ -217,16 +233,77 @@ void TreeDotDump(TNODE *node)
 		return;
 
 	fprintf(file, "node%p [shape=plaintext\n\
-			\t\tlabel=<<table border='1' cellborder='1'>\n\
-			\t\t<tr><td colspan=\"2\" bgcolor=\"lightskyblue\" >%s</td></tr>\n\
+			\t\tlabel=<<table border='1' cellborder='1'>\n",node);
+	
+	switch (node->data.data_type) {
+	case CONST:
+		fprintf(file, "	\t\t<tr><td colspan=\"2\" bgcolor=\"lightskyblue\" >%lg", node->data.value.num);
+		break;
+	case OPER:
+		fprintf(file, "	\t\t<tr><td colspan=\"2\" bgcolor=\"olivedrab3\" >%c", node->data.value.str);
+		break;
+	case VAR:
+		fprintf(file, "	\t\t<tr><td colspan=\"2\" bgcolor=\"orchid\" >%c", node->data.value.str);
+		break;
+	default:
+		break;
+	}
+
+	fprintf(file,   "</td></tr>\n\
 			\t\t<tr><td port= \"lchild\">L:%p</td><td port=\"rchild\">R: %p</td></tr>\n\
-			\t</table>>];\n", node, node->data.strptr, node->left, node->right);
+			\t</table>>];\n", node->left, node->right);
 	
 	if (node->left)
-		fprintf(file, "\tnode%p:lchild -> node%p[style=bold, arrowhead=vee label = \"Yes\"];\n",
+		fprintf(file, "\t\tnode%p:lchild -> node%p[style=bold, arrowhead=vee];\n",
 			       	node, node->left);
 
 	if (node->right)
-		fprintf(file, "\tnode%p:rchild -> node%p[style=bold, arrowhead=vee label = \"No\"];\n", 
+		fprintf(file, "\t\tnode%p:rchild -> node%p[style=bold, arrowhead=vee];\n", 
 				node, node->right);
+#ifdef PARENT_PRINT
+	if (node->parent)
+		fprintf(file, "\t\tnode%p -> node%p[style=bold, arrowhead=vee];\n", 
+				node, node->parent);
+#endif
 }
+
+static int tree_copy(TNODE *src, TNODE **node, TNODE *parent)
+{
+	ERRNUM_CHECK(ERRNUM);
+	
+	TreeCtor(node, src->data, parent);
+	ERRNUM_CHECK(ERRNUM);
+	$	
+	if (src->left)
+		tree_copy(src->left,  &((*node)->left), *node);
+	
+	if (src->right)
+		tree_copy(src->right, &((*node)->right), *node);
+	
+	return ERRNUM;
+}
+
+diff_data set_diff_data(int data_type, DATA val)
+{
+	diff_data ddata = {};
+
+	ddata.value     = val;
+	ddata.data_type = data_type;
+
+	return ddata;
+}
+
+DATA data_un(double num)
+{
+	DATA tmp  = {};
+	tmp.num = num;
+	return tmp;
+}
+
+DATA data_un(char str)
+{
+	DATA tmp = {};
+	tmp.str  = str;
+	return tmp;
+}
+
