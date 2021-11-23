@@ -118,7 +118,8 @@ const int DIFF_ERRS = 1;
 
 enum diff_errs {
 	DIFF_UNKNOWN_TYPE = 400,
-	DIFF_SYNTAX_ERR   = 401
+	DIFF_SYNTAX_ERR   = 401,
+	DIFF_UNKNOWN_OPER = 402
 };
 /*
  * Returns a pointer to the textual description of the code errtype.

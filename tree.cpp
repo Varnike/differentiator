@@ -1,6 +1,5 @@
 #include "tree.h"
 
-static void set_node(TNODE *node, tval_t val, TNODE *parent = NULL, TNODE *left = NULL, TNODE *right = NULL);
 static void visit_check(TNODE *node, int flagval = 0);
 
 static int TreeTraverseIn(TNODE *root);
@@ -142,7 +141,7 @@ static int TreeTraverseIn(TNODE *node)
 	return 0;
 }
 
-static void set_node(TNODE *node, tval_t val, TNODE *parent, TNODE *left, TNODE *right)
+void set_node(TNODE *node, tval_t val, TNODE *parent, TNODE *left, TNODE *right)
 {
 	if (node == NULL)
 		return;
@@ -273,7 +272,7 @@ static int tree_copy(TNODE *src, TNODE **node, TNODE *parent)
 	
 	TreeCtor(node, src->data, parent);
 	ERRNUM_CHECK(ERRNUM);
-	$	
+		
 	if (src->left)
 		tree_copy(src->left,  &((*node)->left), *node);
 	
@@ -293,17 +292,16 @@ diff_data set_diff_data(int data_type, DATA val)
 	return ddata;
 }
 
-DATA data_un(double num)
+DATA data_un_d(double num)
 {
 	DATA tmp  = {};
 	tmp.num = num;
 	return tmp;
 }
 
-DATA data_un(char str)
+DATA data_un_c(char str)
 {
 	DATA tmp = {};
 	tmp.str  = str;
 	return tmp;
 }
-

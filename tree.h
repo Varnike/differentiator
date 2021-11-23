@@ -89,8 +89,10 @@ int TreeCopy(TNODE *src, TNODE **dst, TNODE *parent);
 void TreeDump(TNODE *node);
 
 diff_data set_diff_data(int data_type = 0, DATA val = {});
-DATA data_un(double num = 0);
-DATA data_un(char str = 0);
+DATA data_un_d(double num = 0);
+DATA data_un_c(char str = 0);
+void set_node(TNODE *node, tval_t val, TNODE *parent = NULL, TNODE *left = NULL, TNODE *right = NULL);
+
 
 void TreeDotDump(TNODE *node);
 void VisitPrint(TNODE *node, FILE *fout = stdout);

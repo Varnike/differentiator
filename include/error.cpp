@@ -75,7 +75,8 @@ const char *errmsg(int errt)
 
 	const char *diff_messages[] = {
 		"Differentiator unknown node type!",
-		"Differentiator syntax error!"
+		"Differentiator syntax error!",
+		"Differentiator unknown operation type!"
 	};
 
 	switch (errt/100) {

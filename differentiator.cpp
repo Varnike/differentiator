@@ -6,7 +6,6 @@ static int read_num(TNODE **node, TNODE *parent, textBuff *btext, int ip);
 static int read_oper(TNODE **node, TNODE *parent, textBuff *btext, int ip);
 static int ident_data_type(textBuff *btext, int ip);
 
-static TNODE* new_node(int type, DATA val, TNODE *right, TNODE *left, TNODE *parent);
 
 FILE *diff_log = stdout;
 
@@ -14,32 +13,56 @@ int DiffProcess()
 {
 	TNODE *tree = NULL;
 	textBuff btext = {};
-$
-	DiffInit(&tree, &btext);
-	TreeDump(tree);
 
+	DiffInit(&tree, &btext);
 	DiffPrint(tree);
 	printf("\n");
+	
+	TNODE *answ = DIFF(tree);
+	DiffPrint(answ);
+	printf("\n");
+
+	TreeDump(answ);
+
+	TreeDtor(answ);
 	TreeDtor(tree);
 	return 0;
 }
-/*
-TNODE *DIFF(TNODE *node) 
+
+TNODE *DIFF(TNODE *node, TNODE *parent) 
 {
-	switch (src->data.data_type) {
+	switch (TYPE(node)) {
 	case CONST:
-		return NEW_NODE();
+		return NEW_CONST(0);
 		break;
 	case VAR:
+		return NEW_CONST(1.0);
 		break;
 	case OPER:
+		printf("[OPER]:\t%c\n", STR(node));
+		switch (STR(node)) {
+		case OP_ADD:	
+			return ADD(DL, DR);
+		case OP_MUL:
+			return ADD(MUL(DL, CR), MUL(CL, DR));
+		case OP_SUB:
+			return SUB(DL, DR); 
+		case OP_PWR:
+			return MUL(CR, PWR(CL, SUB(CR, NEW_CONST(1))));
+		case OP_DIV:
+			return DIV(SUB(MUL(DL, CR), MUL(DR, CL)), PWR(CR, NEW_CONST(2)));
+		default:
+			break;
+		}
 		break;
 	default:
-		return ERRNUM = DIFF_UNKNOWN_TYPE;
+		ERRNUM = DIFF_UNKNOWN_TYPE;
+		return NULL; //TODO clear ???
 		break;
 	}
+	return NULL;
 }
-*/
+
 int DiffPrint(TNODE *node, FILE *fout)
 {
 	ERRNUM_CHECK(ERRNUM);
@@ -82,15 +105,28 @@ int node_print(TNODE *node, FILE *file)
 	}
 	return 0;
 }
-/*
-static TNODE* new_node(int type, DATA val, TNODE *right, TNODE *left, TNODE *parent)
+
+TNODE* new_node(int type, DATA val, TNODE *left, TNODE *right, TNODE *parent)
 {
 	TNODE* node = NULL;
-	TreeCtor(&node, set_diff_data(type, val), parent);
+	TreeCtor(&node);
 
-	node->set
+	ERRNUM_CHECK(NULL);
+
+	set_node(node, set_diff_data(type, val), parent, left, right);
+
+	return node;
 }
-*/
+
+TNODE *copy_nodes(TNODE *src, TNODE *parent)
+{
+	TNODE *node = NULL;
+
+	TreeCopy(src, &node, parent);
+	ERRNUM_CHECK(NULL);
+
+	return node;
+}
 int DiffInit(TNODE **tree, textBuff *btext)
 {
 	CHECK_(!tree,		TREE_NULL_NODE);
@@ -132,7 +168,7 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 			break;
 		case VAR:
 			STR(*node) = btext->buff[ip];
-			printf("\t[ip = %d] added variable \'%c\'\n", ip, STR(*node));
+			printf("[%d] added variable \'%c\'\n", ip, STR(*node));
 			(*node)->data.data_type = VAR;
 			(*node)->parent = parent;
 			break;
@@ -194,7 +230,7 @@ static int read_num(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 		return -1;
 	}
 	
-	printf("\t[ip = %d] Numeric value %f added\n", ip, val);
+	printf("[%d] Numeric value %f added\n", ip, val);
 
 	NUM((*node)) = val;
 	(*node)->data.data_type = CONST;
@@ -213,7 +249,7 @@ static int read_oper(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 	(*node)->data.data_type = OPER;
 	(*node)->parent = parent;
 
-	printf("\t[ip = %d] Operator \'%c\' added\n", ip, STR(*node));
+	printf("[%d] operator \'%c\' added\n", ip, STR(*node));
 	
 	return ip;
 }
