@@ -49,9 +49,11 @@
  * 3)TODO int tree dump 
  */
 enum DATA_TYPES {
-	CONST = 0,
-	OPER  = 1,
-	VAR   = 2
+	CONST        = 0,
+	OPER         = 1,
+	VAR          = 2,
+	UOPER        = 3,
+	UNKNOWN_TYPE = 4
 };
 union DATA {
 	double num;

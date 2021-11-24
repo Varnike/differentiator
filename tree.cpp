@@ -134,7 +134,7 @@ static int TreeTraverseIn(TNODE *node)
 		TreeTraverseIn(node->left);
 	
 	TreeDotDump(node);
-	VisitPrint(node);
+//	VisitPrint(node);
 
 	if (node->right)
 		TreeTraverseIn(node->right);
