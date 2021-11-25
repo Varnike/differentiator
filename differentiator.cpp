@@ -22,8 +22,9 @@ int DiffProcess()
 	printf("\nRaw input : ");
 	DiffPrint(tree);
 	printf("\n");
+	TreeDump(tree);
 	
-	DiffTreeSimplify(tree);
+/*	DiffTreeSimplify(tree);
 	printf("Simplificate input: ");
 	DiffPrint(tree);
 	printf("\n\n");
@@ -37,9 +38,9 @@ int DiffProcess()
 	printf("Simplificate answer : ");
 	DiffPrint(answ);
 	printf("\n");
-	TreeDump(answ);
+	TreeDump(tree);
 
-	TreeDtor(answ);
+	TreeDtor(answ);*/
 	TreeDtor(tree);
 	return 0;
 }
@@ -74,9 +75,12 @@ TNODE *DIFF(TNODE *node, TNODE *parent)
 	case UOPER:
 		switch (STR(node)) {
 		case UOP_SIN:
-			return 0;
+			return MUL(COS(CL), DL);
+		case UOP_COS:
+			return MUL(NEW_CONST(-1), MUL(SIN(CL), DL));
 		}
 	default:
+		$
 		ERRNUM = DIFF_UNKNOWN_TYPE;
 		return NULL;
 		break;
@@ -129,6 +133,8 @@ static int const_simplify(TNODE *node, int *change_flag)
 	
 	if (!node)
 		return UNKNOWN_TYPE;
+	if (TYPE(node) == UOPER)
+		return 3;//TODO
 
 	if (TYPE(node) == OPER) {
 
@@ -155,8 +161,7 @@ static int const_simplify(TNODE *node, int *change_flag)
 				replace_const(node, pow(NUM(node->left), NUM(node->right)));
 				break;
 			default:
-				ERRNUM = DIFF_UNKNOWN_TYPE;
-				return UNKNOWN_TYPE;
+				return 0;
 			}
 
 			return CONST;
@@ -269,7 +274,7 @@ static int replace_nodes(TNODE *dst, TNODE *src)
 }
 int node_print(TNODE *node, FILE *file)
 {
-	CHECK_(node == NULL, TREE_NULL_NODE);
+	CHECK_(node == NULL, 0);
 	
 	switch (node->data.data_type) {
 	case CONST:
@@ -281,7 +286,18 @@ int node_print(TNODE *node, FILE *file)
 	case VAR:
 		fprintf(file, "%c",  STR(node));
 		break;
+	case UOPER:
+		switch (STR(node)) {
+		case UOP_SIN:
+			fprintf(file, "sin");
+			break;
+		case UOP_COS:
+			fprintf(file, "cos");
+			break;
+		}
+		break;
 	default:
+		$
 		return ERRNUM = DIFF_UNKNOWN_TYPE;
 	}
 	return 0;
@@ -353,31 +369,26 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 			ip = read_num(node, parent, btext, ip);
 			if (ip < 0)
 				return ERRNUM;
+
+			return ip;
 			break;
 		case VAR:
 			STR(*node) = btext->buff[ip];
 			printf("[%d] added variable \'%c\'\n", ip, STR(*node));
 			TYPE(*node) = VAR;
 			(*node)->parent = parent;
+			return ip;
 			break;
 		case OPER:
 			ip = read_oper(node, parent, btext, ip);
 			if (ip < 0)
 				return ERRNUM;
-
+			if (TYPE(*node) == OPER)
+				ip = read_database(&((*node)->right), *node,  btext, ip + 1);
 			break;
 		default:
 			if (btext->buff[ip] == '(') {
-				if (!left && btext->buff[ip + 1] == '(') {
-					printf("[%d]  :  left\n", ip);
-					ip = read_database(&((*node)->left), *node,  btext, ip + 1);
-					printf("[%d]\n", ip);
-					left = 1;
-				} else if (left == 1){
-					printf("[%d]  :  right\n", ip);
-//					left = -1;
-					ip = read_database(&((*node)->right), *node, btext, ip);
-				}
+				ip = read_database(&((*node)->left), *node,  btext, ip + 1);
 			} else if (btext->buff[ip] == ')') {
 				if (ip == 0) {
 					ERRNUM = DIFF_SYNTAX_ERR;
@@ -435,10 +446,12 @@ static int read_oper(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 {//TODO sin cos log and s.o.  TODO ERRS?
 	STR(*node) = btext->buff[ip];
 
-	if (isupper(btext->buff[ip]))
-		TYPE(*node) = UOPER;
-	else 
+	if (isupper(btext->buff[ip])) {
+	$	TYPE(*node) = UOPER;
+	}
+	else {
 		TYPE(*node) = OPER;
+	}
 	(*node)->parent = parent;
 
 	printf("[%d] operator \'%c\' added\n", ip, STR(*node));

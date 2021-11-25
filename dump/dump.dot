@@ -1,8 +1,20 @@
 digraph dump_graph {
 	rankdir=TV; 
-node0x55d689fa9500 [shape=plaintext
+node0x55edebf63500 [shape=plaintext
 					label=<<table border='1' cellborder='1'>
-			<tr><td colspan="2" bgcolor="lightskyblue" >1</td></tr>
+			<tr><td colspan="2" bgcolor="orchid" >x</td></tr>
+					<tr><td port= "lchild">L:(nil)</td><td port="rchild">R: (nil)</td></tr>
+				</table>>];
+node0x55edebf634c0 [shape=plaintext
+					label=<<table border='1' cellborder='1'>
+			<tr><td colspan="2" bgcolor="olivedrab3" >*</td></tr>
+					<tr><td port= "lchild">L:0x55edebf63500</td><td port="rchild">R: 0x55edebf63540</td></tr>
+				</table>>];
+		node0x55edebf634c0:lchild -> node0x55edebf63500[style=bold, arrowhead=vee];
+		node0x55edebf634c0:rchild -> node0x55edebf63540[style=bold, arrowhead=vee];
+node0x55edebf63540 [shape=plaintext
+					label=<<table border='1' cellborder='1'>
+			<tr><td colspan="2" bgcolor="lightskyblue" >189</td></tr>
 					<tr><td port= "lchild">L:(nil)</td><td port="rchild">R: (nil)</td></tr>
 				</table>>];
 }

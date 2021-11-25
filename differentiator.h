@@ -14,11 +14,13 @@
 #define NEW_CONST(val)				new_node(CONST, data_un_d(val), NULL, NULL, parent)
 #define NEW_OPER(type, left, right, parent)	new_node(OPER, data_un_c(type), left, right, parent)
 
-#define ADD(left, right)			new_node(OPER, data_un_c('+'), left, right, parent)
-#define SUB(left, right)			new_node(OPER, data_un_c('-'), left, right, parent)
-#define MUL(left, right)			new_node(OPER, data_un_c('*'), left, right, parent)
-#define PWR(left, right)			new_node(OPER, data_un_c('^'), left, right, parent)
-#define DIV(left, right)			new_node(OPER, data_un_c('/'), left, right, parent)
+#define ADD(left, right)			new_node(OPER,  data_un_c('+'), left, right, parent)
+#define SUB(left, right)			new_node(OPER,  data_un_c('-'), left, right, parent)
+#define MUL(left, right)			new_node(OPER,  data_un_c('*'), left, right, parent)
+#define PWR(left, right)			new_node(OPER,  data_un_c('^'), left, right, parent)
+#define DIV(left, right)			new_node(OPER,  data_un_c('/'), left, right, parent)
+#define SIN(left)				new_node(UOPER, data_un_c('S'), left, NULL,  NULL)
+#define COS(left)				new_node(UOPER, data_un_c('C'), left, NULL,  NULL)
 
 #define CR					copy_nodes(node->right, parent)
 #define CL					copy_nodes(node->left, parent)
