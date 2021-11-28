@@ -1,20 +1,32 @@
 digraph dump_graph {
 	rankdir=TV; 
-node0x55edebf63500 [shape=plaintext
+node0x55b44cbfd6f0 [shape=plaintext
+					label=<<table border='1' cellborder='1'>
+			<tr><td colspan="2" bgcolor="lightskyblue" >5</td></tr>
+					<tr><td port= "lchild">L:(nil)</td><td port="rchild">R: (nil)</td></tr>
+				</table>>];
+node0x55b44cbfd6b0 [shape=plaintext
+					label=<<table border='1' cellborder='1'>
+			<tr><td colspan="2" bgcolor="olivedrab3" >/</td></tr>
+					<tr><td port= "lchild">L:0x55b44cbfd6f0</td><td port="rchild">R: 0x55b44cbfd730</td></tr>
+				</table>>];
+		node0x55b44cbfd6b0:lchild -> node0x55b44cbfd6f0[style=bold, arrowhead=vee];
+		node0x55b44cbfd6b0:rchild -> node0x55b44cbfd730[style=bold, arrowhead=vee];
+node0x55b44cbfd770 [shape=plaintext
 					label=<<table border='1' cellborder='1'>
 			<tr><td colspan="2" bgcolor="orchid" >x</td></tr>
 					<tr><td port= "lchild">L:(nil)</td><td port="rchild">R: (nil)</td></tr>
 				</table>>];
-node0x55edebf634c0 [shape=plaintext
+node0x55b44cbfd730 [shape=plaintext
 					label=<<table border='1' cellborder='1'>
-			<tr><td colspan="2" bgcolor="olivedrab3" >*</td></tr>
-					<tr><td port= "lchild">L:0x55edebf63500</td><td port="rchild">R: 0x55edebf63540</td></tr>
+			<tr><td colspan="2" bgcolor="olivedrab3" >^</td></tr>
+					<tr><td port= "lchild">L:0x55b44cbfd770</td><td port="rchild">R: 0x55b44cbfd7b0</td></tr>
 				</table>>];
-		node0x55edebf634c0:lchild -> node0x55edebf63500[style=bold, arrowhead=vee];
-		node0x55edebf634c0:rchild -> node0x55edebf63540[style=bold, arrowhead=vee];
-node0x55edebf63540 [shape=plaintext
+		node0x55b44cbfd730:lchild -> node0x55b44cbfd770[style=bold, arrowhead=vee];
+		node0x55b44cbfd730:rchild -> node0x55b44cbfd7b0[style=bold, arrowhead=vee];
+node0x55b44cbfd7b0 [shape=plaintext
 					label=<<table border='1' cellborder='1'>
-			<tr><td colspan="2" bgcolor="lightskyblue" >189</td></tr>
+			<tr><td colspan="2" bgcolor="lightskyblue" >2</td></tr>
 					<tr><td port= "lchild">L:(nil)</td><td port="rchild">R: (nil)</td></tr>
 				</table>>];
 }

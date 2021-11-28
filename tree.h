@@ -19,7 +19,7 @@
 
 #define CHECK_(what, code)      if (what) SET_ERR (code)
 
-#define CHECK_BREAK(what, code)	if (what) {SET_ERR(code); break;}
+#define CHECK_BREAK(what)	if (what) break;
 
 #define ERRNUM_CHECK(ret_val)   						\
 	{									\
@@ -55,6 +55,14 @@ enum DATA_TYPES {
 	UOPER        = 3,
 	UNKNOWN_TYPE = 4
 };
+
+enum unary_operators {
+        UOP_SIN  = 'S',
+        UOP_COS  = 'C',
+       	UOP_TAN  = 'T',
+	UOP_CTAN = 'G'
+};                    
+
 union DATA {
 	double num;
 	char str; // TODO char * ???
@@ -99,4 +107,6 @@ void set_node(TNODE *node, tval_t val, TNODE *parent = NULL, TNODE *left = NULL,
 void TreeDotDump(TNODE *node);
 void VisitPrint(TNODE *node, FILE *fout = stdout);
 int TreeCheck(TNODE *node);
+const char *get_unoper_name(int type); 
+
 #endif // TREE_H

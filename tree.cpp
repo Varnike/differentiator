@@ -244,6 +244,11 @@ void TreeDotDump(TNODE *node)
 	case VAR:
 		fprintf(file, "	\t\t<tr><td colspan=\"2\" bgcolor=\"orchid\" >%c", node->data.value.str);
 		break;
+	case UOPER:
+		fprintf(file, "	\t\t<tr><td colspan=\"2\" bgcolor=\"saddlebrown\" >%s", 
+				get_unoper_name(node->data.value.str));
+		break;
+
 	default:
 		break;
 	}
@@ -304,4 +309,22 @@ DATA data_un_c(char str)
 	DATA tmp = {};
 	tmp.str  = str;
 	return tmp;
+}
+
+const char *get_unoper_name(int type) 
+{
+	const char *uop_names[] = {
+		"cos",
+		"sin"
+	};
+
+	switch (type) {
+	case UOP_COS:
+		return uop_names[0];
+	case UOP_SIN:
+		return uop_names[1];
+	default:
+		ERRNUM = DIFF_UNKNOWN_OPER;
+		return NULL;
+	}
 }

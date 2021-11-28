@@ -37,15 +37,22 @@ enum operators {
 	OP_PWR = '^'
 };
 
+enum priority {
+	PR_ADSB = 0,
+	PR_MUDI = 1,
+	PR_PWR  = 2
+
+};
+/*
 enum unary_operators {
 	UOP_SIN = 'S',
 	UOP_COS = 'C'
 };
+*/
 const double ACCURACY = 10e-6;
 
 /*
- * 1)TODO pretty print
- * 2)TODO sin cos %s
+ * 1)TODO func for power of operator
  */
 
 int DiffInit(TNODE **node, textBuff *btext);
@@ -55,6 +62,7 @@ int DiffTreeSimplify(TNODE *root);
 TNODE *DIFF(TNODE *node, TNODE *parent = NULL);
 int DiffProcess();
 
+int DiffTexDump(TNODE *root);
 TNODE *new_node(int type, DATA val, TNODE *left, TNODE *right, TNODE *parent);
 TNODE *copy_nodes(TNODE *src, TNODE *parent);
 

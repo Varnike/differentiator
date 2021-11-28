@@ -10,39 +10,79 @@ static int node_simplify(TNODE *node, int *change_flag);
 static int replace_const(TNODE *node, double val);
 static int cmp_double(double val1, double val2);
 static int replace_nodes(TNODE *dst, TNODE *src);
+static int print_tex_node(TNODE *node);
+static int op_priority(int op);
 
 FILE *diff_log = stdout;
 
 int DiffProcess()
 {
+	FILE *file = fopen("dump/texdump.tex", "w");
+	CHECK_(file == NULL, FOPEN_ERR);
+
+	fprintf(file, "\\documentclass{article}\n"
+		"\\usepackage[utf8]{inputenc}\n"
+		"\\title{Differentiatin log}\n"
+		"\\author{enikeev.en}\n"
+		"\\date{September 2021}\n"
+		"\\usepackage[utf8]{inputenc}\n"
+		"\\usepackage[T2A]{fontenc}\n"
+		"\\usepackage[russian]{babel}\n"
+		"\\usepackage{amsthm}\n"
+		"\\usepackage{amsmath}\n"
+		"\\usepackage{amssymb}\n"
+		"\\usepackage{tikz}\n"
+		"\\usepackage{textcomp}\n"
+		"\\usepackage{marvosym}\n"
+		"\\usepackage{ esint }\n"
+		"\\usepackage{amsfonts}\n"
+		"\\setlength{\\topmargin}{-0.5in}\n"
+		"\\setlength{\\textheight}{9.1in}\n"
+		"\\setlength{\\oddsidemargin}{-0.4in}\n"
+		"\\setlength{\\evensidemargin}{-0.4in}\n"
+		"\\setlength{\\textwidth}{7in}\n"
+		"\\setlength{\\parindent}{0ex}\n"
+		"\\setlength{\\parskip}{1ex}\n"
+		"\\begin{document}");
+		
 	TNODE *tree = NULL;
+	TNODE *answ = NULL;
+
 	textBuff btext = {};
+	do {
+		DiffInit(&tree, &btext);
+		fprintf(file, "\\Large \\center\n\tRaw input.\n\\[");
+		DiffPrint(tree, file);
+		fprintf(file, "\\]\n\n");
+		CHECK_BREAK(ERRNUM);
 
-	DiffInit(&tree, &btext);
-	printf("\nRaw input : ");
-	DiffPrint(tree);
-	printf("\n");
-	TreeDump(tree);
+		DiffTreeSimplify(tree);
+		fprintf(file, "\\Large \\center\n\tSimplificate input.\n\\[");	
+		DiffPrint(tree, file);
+		fprintf(file, "\\]\n\n");
+		CHECK_BREAK(ERRNUM);
+
+		answ = DIFF(tree);
+		fprintf(file, "\\Large \\center\n\tRaw answer.\n\\[");
+		DiffPrint(answ, file);
+		fprintf(file, "\\]\n\n");
+		CHECK_BREAK(ERRNUM);
+		
+		DiffTreeSimplify(answ);
+		fprintf(file, "\\Large \\center\n\tSimplificate answer.\n\\[");
+		DiffPrint(answ, file);
+		fprintf(file, "\\]\n\\end {document}");
+		CHECK_BREAK(ERRNUM);	
+		
+		TreeDump(tree);
+	} while(0);
+
+	if (file != stdout)
+		fclose(file);
 	
-/*	DiffTreeSimplify(tree);
-	printf("Simplificate input: ");
-	DiffPrint(tree);
-	printf("\n\n");
-
-	TNODE *answ = DIFF(tree);
-	printf("Raw answer: ");
-	DiffPrint(answ);
-	printf("\n");
-	
-	DiffTreeSimplify(answ);
-	printf("Simplificate answer : ");
-	DiffPrint(answ);
-	printf("\n");
-	TreeDump(tree);
-
-	TreeDtor(answ);*/
+	TreeDtor(answ);
 	TreeDtor(tree);
-	return 0;
+	return ERRNUM;
 }
 
 TNODE *DIFF(TNODE *node, TNODE *parent) 
@@ -65,7 +105,7 @@ TNODE *DIFF(TNODE *node, TNODE *parent)
 		case OP_SUB:
 			return SUB(DL, DR); 
 		case OP_PWR:
-			return MUL(CR, PWR(CL, SUB(CR, NEW_CONST(1))));
+			return MUL(DL, MUL(CR, PWR(CL, SUB(CR, NEW_CONST(1)))));
 		case OP_DIV:
 			return DIV(SUB(MUL(DL, CR), MUL(DR, CL)), PWR(CR, NEW_CONST(2)));
 		default:
@@ -75,12 +115,11 @@ TNODE *DIFF(TNODE *node, TNODE *parent)
 	case UOPER:
 		switch (STR(node)) {
 		case UOP_SIN:
-			return MUL(COS(CL), DL);
+			return MUL(DL, COS(CL));
 		case UOP_COS:
-			return MUL(NEW_CONST(-1), MUL(SIN(CL), DL));
+			return MUL(NEW_CONST(-1), MUL(DL, SIN(CL)));
 		}
 	default:
-		$
 		ERRNUM = DIFF_UNKNOWN_TYPE;
 		return NULL;
 		break;
@@ -97,20 +136,158 @@ int DiffPrint(TNODE *node, FILE *fout)
 		node_print(node, fout);
 		return 0;
 	}
+	
+	if (TYPE(node) == UOPER) {
+		node_print(node, fout);
+		fprintf(fout, "(");
+	}
 
-	fprintf(fout, "(");
+	int visit_left  = 1;
+	int visit_right = 1;
 	
-	if(node->left)
+	if (TYPE(node) == OPER) {
+		switch (STR(node)) {
+		case OP_DIV:
+			fprintf(fout, "\\frac{");
+			break;
+		case OP_MUL:
+			if (node->left && TYPE(node->left) == CONST && NUM(node->left) < 0) 
+				fprintf(fout, "(");
+
+			if (TYPE(node->left) == OPER && op_priority(STR(node->left)) == PR_ADSB)
+				fprintf(fout, "(");
+						break;
+		case OP_PWR:
+			if (TYPE(node->left) != CONST && TYPE(node->left) != VAR)
+				fprintf(fout, "(");
+			break;
+		case OP_ADD:
+		case OP_SUB:
+			if (TYPE(node->left) == CONST && NUM(node->left) == 0)
+				visit_left = 0;
+			break;
+		default:
+			fprintf(fout, "(");
+			break;
+		}
+	}
+
+///////////////////////////////////////////////
+	if(visit_left && node->left)
 		DiffPrint(node->left, fout);
+///////////////////////////////////////////////
 	
-	node_print(node, fout);
-	
-	if(node->right)
+	if (TYPE(node) == OPER) {
+		switch (STR(node)) {
+		case OP_DIV:
+			fprintf(fout, "}{");
+			break;
+		case OP_PWR:
+			if (TYPE(node->left) != CONST && TYPE(node->left) != VAR)
+				fprintf(fout, ")");
+			fprintf(fout, "^{");
+			break;
+		case OP_MUL:
+			if (node->left && TYPE(node->left) == CONST && NUM(node->left) < 0) 
+				fprintf(fout, ")");
+			
+			if (TYPE(node->left) == OPER && op_priority(STR(node->left)) == PR_ADSB)
+				fprintf(fout, ")");
+
+			fprintf(fout, "\\cdot ");
+			
+			if (node->right && TYPE(node->right) == CONST && NUM(node->right) < 0) 
+				fprintf(fout, "(");
+			
+			if (TYPE(node->right) == OPER && op_priority(STR(node->right)) == PR_ADSB)
+				fprintf(fout, "(");
+			break;
+		case OP_ADD:
+		case OP_SUB:
+			if (TYPE(node->right) == CONST && NUM(node->right) == 0)
+				visit_right = 0;
+			
+			if (STR(node) == OP_ADD) {
+				if (visit_left == 0)
+					break;	
+			}
+
+			if (node->right && TYPE(node->right) == OPER && STR(node->right) == OP_SUB 
+					&& TYPE(node->right->left) == CONST && NUM(node->right->left) == 0)
+				break;
+
+			if (node->right && TYPE(node->right) == CONST && NUM(node->right) < 0) {
+				if (STR(node) == OP_ADD)
+					break;
+				else 
+					fprintf(fout, "(");
+			}
+
+			node_print(node, fout);
+			break;
+
+		default:
+			node_print(node, fout);
+			break;
+		}
+	}
+
+///////////////////////////////////////////////
+	if(visit_right && node->right)
 		DiffPrint(node->right, fout);
+///////////////////////////////////////////////
 	
-	fprintf(fout, ")");
+	if (TYPE(node) == OPER) {
+		switch (STR(node)) {
+		case OP_DIV:
+			fprintf(fout, "}");
+			break;
+		case OP_PWR:
+			fprintf(fout, "}");
+			break;
+		case OP_MUL:
+			if (node->right && TYPE(node->right) == CONST && NUM(node->right) < 0) 
+				fprintf(fout, ")");
+
+			if (TYPE(node->right) == OPER && op_priority(STR(node->right)) == PR_ADSB)
+				fprintf(fout, ")");
+			break;
+		case OP_ADD:
+		case OP_SUB:
+			if (node->right && TYPE(node->right) == CONST && NUM(node->right) < 0) {
+				fprintf(fout, ")");
+			}
+			break;
+		default:
+			fprintf(fout, ")");
+			break;
+		}
+	}
+
+	if (TYPE(node) == UOPER) {
+		fprintf(fout, ")");
+	}
+
 	return 0;
 }
+
+static int op_priority(int op)
+{
+	switch (op) {
+	case OP_ADD:
+	case OP_SUB:
+		return PR_ADSB;
+	case OP_MUL:
+	case OP_DIV:
+		return PR_MUDI;
+	case PR_PWR:
+		return PR_PWR;
+	default:
+		return -1;
+	}
+}
+
+
 
 int DiffTreeSimplify(TNODE *root)
 {
@@ -133,10 +310,10 @@ static int const_simplify(TNODE *node, int *change_flag)
 	
 	if (!node)
 		return UNKNOWN_TYPE;
-	if (TYPE(node) == UOPER)
-		return 3;//TODO
 
 	if (TYPE(node) == OPER) {
+		if (!node->left)
+			return TYPE(node);
 
 		int lchild_t = const_simplify(node->left,  change_flag);
 		int rchild_t = const_simplify(node->right, change_flag);
@@ -161,7 +338,8 @@ static int const_simplify(TNODE *node, int *change_flag)
 				replace_const(node, pow(NUM(node->left), NUM(node->right)));
 				break;
 			default:
-				return 0;
+				ERRNUM = DIFF_UNKNOWN_TYPE;
+				return UNKNOWN_TYPE;
 			}
 
 			return CONST;
@@ -274,30 +452,32 @@ static int replace_nodes(TNODE *dst, TNODE *src)
 }
 int node_print(TNODE *node, FILE *file)
 {
-	CHECK_(node == NULL, 0);
+	ERRNUM_CHECK(ERRNUM);
+	CHECK_(node == NULL, TREE_NULL_NODE);
 	
 	switch (node->data.data_type) {
 	case CONST:
 		fprintf(file, "%lg", NUM(node));
 		break;
 	case OPER:
-		fprintf(file, "%c",  STR(node));
+		fprintf(file, " %c ",  STR(node));
 		break;
 	case VAR:
 		fprintf(file, "%c",  STR(node));
 		break;
 	case UOPER:
-		switch (STR(node)) {
+		switch(STR(node)) {
 		case UOP_SIN:
 			fprintf(file, "sin");
 			break;
 		case UOP_COS:
 			fprintf(file, "cos");
 			break;
+		default:
+			return ERRNUM = DIFF_UNKNOWN_TYPE;
 		}
 		break;
 	default:
-		$
 		return ERRNUM = DIFF_UNKNOWN_TYPE;
 	}
 	return 0;
@@ -363,13 +543,14 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 	int left = 0;
 	for ( ; ip < btext->buffsize; ip++) {
 		printf("[%d]  :  \"%c\"\n", ip, btext->buff[ip]);
+		VisitPrint(*node, diff_log);
 
 		switch (ident_data_type(btext, ip)) {
 		case CONST:
 			ip = read_num(node, parent, btext, ip);
 			if (ip < 0)
 				return ERRNUM;
-
+			printf("[%d]  :  returned\n", ip);
 			return ip;
 			break;
 		case VAR:
@@ -377,6 +558,9 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 			printf("[%d] added variable \'%c\'\n", ip, STR(*node));
 			TYPE(*node) = VAR;
 			(*node)->parent = parent;
+			printf("[%d]  :  returned\n", ip);
+			VisitPrint(*node, diff_log);
+
 			return ip;
 			break;
 		case OPER:
@@ -385,6 +569,7 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 				return ERRNUM;
 			if (TYPE(*node) == OPER)
 				ip = read_database(&((*node)->right), *node,  btext, ip + 1);
+			
 			break;
 		default:
 			if (btext->buff[ip] == '(') {
@@ -403,7 +588,7 @@ static int read_database(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 			break;
 		}
 	}
-	
+	$	
 	return ERRNUM = DIFF_SYNTAX_ERR;	
 }
 
@@ -436,18 +621,18 @@ static int read_num(TNODE **node, TNODE *parent, textBuff *btext, int ip)
 	TYPE(*node) = CONST;
 	(*node)->parent = parent;
 
-	for ( ; ip < btext->buffsize && btext->buff[ip] != ')'; ip++)
+	for ( ; ip < btext->buffsize && (isdigit(btext->buff[ip]) || btext->buff[ip] == '.'); ip++)
 		;
 
 	return ip - 1;
 }
 
 static int read_oper(TNODE **node, TNODE *parent, textBuff *btext, int ip)
-{//TODO sin cos log and s.o.  TODO ERRS?
+{
 	STR(*node) = btext->buff[ip];
 
 	if (isupper(btext->buff[ip])) {
-	$	TYPE(*node) = UOPER;
+		TYPE(*node) = UOPER;
 	}
 	else {
 		TYPE(*node) = OPER;
