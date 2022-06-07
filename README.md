@@ -17,5 +17,5 @@ After you run the program it will output:
 ![Differentiator output](/dump/example.jpeg)
 
 ## Expression representation
-The differentiator represents the expression as an inar tree. Here's an example of the expression view above:
+The differentiator represents the expression as an binary tree. Here's an example of the expression view above:
 ![Expression tree](/dump/example_tree.jpeg)
